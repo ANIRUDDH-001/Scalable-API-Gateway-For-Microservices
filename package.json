@@ -1,0 +1,21 @@
+{
+  "name": "api-gateway-fintech",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "gateway",
+    "services/auth-service",
+    "services/accounts-service",
+    "services/transactions-service"
+  ],
+  "scripts": {
+    "lint": "eslint . --max-warnings 0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "jest --passWithNoTests",
+    "test:coverage": "jest --coverage --passWithNoTests",
+    "test:integration": "jest --testPathPattern=integration --passWithNoTests",
+    "prepare": "husky"
+  },
+  "devDependencies": {}
+}
