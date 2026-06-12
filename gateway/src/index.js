@@ -1,11 +1,11 @@
 const config = require('./config');
 const app = require('./app');
+const { registerProxyRoutes } = require('./routes/proxy.routes');
 
-// Proxy routes registered here (M1-P3-SP2 adds this)
-// const registerProxyRoutes = require('./routes/proxy.routes');
-// registerProxyRoutes(app);
+// Register proxy routes BEFORE the 404 handler
+registerProxyRoutes(app);
 
-// 404 must be LAST — after all routes and proxies
+// 404 must be LAST
 app.use(app.notFound);
 
 const server = app.listen(config.port, () => {
