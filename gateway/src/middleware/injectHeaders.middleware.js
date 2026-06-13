@@ -1,4 +1,5 @@
 const config = require('../config');
+const { fixRequestBody } = require('http-proxy-middleware');
 
 /**
  * Removes any client-supplied internal headers (prevents spoofing)
@@ -14,6 +15,11 @@ const injectGatewayHeaders = (proxyReq, _req) => {
 
   // Inject gateway-controlled headers
   proxyReq.setHeader('x-internal-key', config.internalServiceKey);
+
+  // Fix body parser hanging issue for POST requests
+  if (_req.body && Object.keys(_req.body).length > 0) {
+    fixRequestBody(proxyReq, _req);
+  }
 
   // x-request-id forwarding added in M2-P1-SP3
   // x-user-* headers added in M2-P1-SP2 (after JWT verification)
