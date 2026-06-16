@@ -21,6 +21,7 @@ describe('GET /health', () => {
 
     const res = await request(app).get('/health');
     expect(res.status).toBe(200);
+    expect(res.headers['x-request-id']).toBeDefined();
     expect(res.body.gateway).toBe('up');
     expect(res.body.allServicesUp).toBe(true);
   });

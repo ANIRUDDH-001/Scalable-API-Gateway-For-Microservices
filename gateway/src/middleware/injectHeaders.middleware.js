@@ -16,6 +16,7 @@ const injectGatewayHeaders = (proxyReq, req) => {
 
   // Always inject internal service key
   proxyReq.setHeader('x-internal-key', config.internalServiceKey);
+  proxyReq.setHeader('x-request-id', req.requestId || 'unknown');
 
   // Fix body parser hanging issue for POST requests
   if (req.body && Object.keys(req.body).length > 0) {

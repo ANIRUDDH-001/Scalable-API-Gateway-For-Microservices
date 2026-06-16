@@ -45,6 +45,7 @@ describe('Gateway Proxy Routing', () => {
         .send({ email: 'test@test.com', password: 'pass', name: 'Test' });
 
       expect(res.status).toBe(201);
+      expect(res.headers['x-request-id']).toBeDefined();
       expect(res.body.status).toBe('success');
     });
   });

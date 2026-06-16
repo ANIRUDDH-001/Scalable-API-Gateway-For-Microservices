@@ -1,9 +1,13 @@
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const { assignRequestId } = require('./middleware/requestId.middleware');
 const healthRouter = require('./routes/health.routes');
 
 const app = express();
+
+// Request ID must be first — every subsequent middleware and log needs it
+app.use(assignRequestId);
 
 // Security and parsing middleware
 app.use(helmet());
