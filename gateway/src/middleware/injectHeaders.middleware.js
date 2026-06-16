@@ -2,27 +2,34 @@ const config = require('../config');
 const { fixRequestBody } = require('http-proxy-middleware');
 
 /**
- * Removes any client-supplied internal headers (prevents spoofing)
- * then injects the gateway's own values.
- * Applied inside proxy proxyReq event — runs on every forwarded request.
+ * Removes any client-supplied spoofable headers.
+ * Then injects gateway-controlled values.
+ * req.user is populated by auth.middleware.js for protected routes.
  */
-const injectGatewayHeaders = (proxyReq, _req) => {
+const injectGatewayHeaders = (proxyReq, req) => {
   // Strip headers the client must never control
   proxyReq.removeHeader('x-internal-key');
   proxyReq.removeHeader('x-user-id');
   proxyReq.removeHeader('x-user-email');
   proxyReq.removeHeader('x-user-role');
+  proxyReq.removeHeader('x-request-id');
 
-  // Inject gateway-controlled headers
+  // Always inject internal service key
   proxyReq.setHeader('x-internal-key', config.internalServiceKey);
 
   // Fix body parser hanging issue for POST requests
-  if (_req.body && Object.keys(_req.body).length > 0) {
-    fixRequestBody(proxyReq, _req);
+  if (req.body && Object.keys(req.body).length > 0) {
+    fixRequestBody(proxyReq, req);
+  }
+
+  // Inject verified user identity if auth middleware ran (protected routes)
+  if (req.user) {
+    proxyReq.setHeader('x-user-id', req.user.id);
+    proxyReq.setHeader('x-user-email', req.user.email);
+    proxyReq.setHeader('x-user-role', req.user.role);
   }
 
   // x-request-id forwarding added in M2-P1-SP3
-  // x-user-* headers added in M2-P1-SP2 (after JWT verification)
 };
 
 module.exports = { injectGatewayHeaders };

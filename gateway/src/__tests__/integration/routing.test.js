@@ -13,6 +13,7 @@ process.env.AUTH_SERVICE_URL = 'http://localhost:3001';
 process.env.ACCOUNTS_SERVICE_URL = 'http://localhost:3002';
 process.env.TRANSACTIONS_SERVICE_URL = 'http://localhost:3003';
 
+const jwt = require('jsonwebtoken');
 const app = require('../../app');
 const { registerProxyRoutes } = require('../../routes/proxy.routes');
 registerProxyRoutes(app);
@@ -25,6 +26,12 @@ beforeEach(() => {
 afterAll(() => {
   nock.restore();
 });
+
+const validToken = jwt.sign(
+  { id: 'test', email: 'test@test.com', role: 'customer' },
+  process.env.JWT_SECRET,
+  { issuer: 'auth-service' }
+);
 
 describe('Gateway Proxy Routing', () => {
   describe('POST /api/v1/auth/*', () => {
@@ -46,14 +53,18 @@ describe('Gateway Proxy Routing', () => {
     it('forwards to accounts-service and returns its response', async () => {
       nock('http://localhost:3002').get('/').reply(200, { status: 'success', count: 3, data: [] });
 
-      const res = await request(app).get('/api/v1/accounts');
+      const res = await request(app)
+        .get('/api/v1/accounts')
+        .set('Authorization', `Bearer ${validToken}`);
       expect(res.status).toBe(200);
     });
 
     it('returns 502 when accounts-service is unreachable', async () => {
       nock('http://localhost:3002').get('/').replyWithError('ECONNREFUSED');
 
-      const res = await request(app).get('/api/v1/accounts');
+      const res = await request(app)
+        .get('/api/v1/accounts')
+        .set('Authorization', `Bearer ${validToken}`);
       expect(res.status).toBe(502);
       expect(res.body.status).toBe('error');
     });
@@ -63,7 +74,9 @@ describe('Gateway Proxy Routing', () => {
     it('forwards to transactions-service', async () => {
       nock('http://localhost:3003').get('/').reply(200, { status: 'success', count: 0, data: [] });
 
-      const res = await request(app).get('/api/v1/transactions');
+      const res = await request(app)
+        .get('/api/v1/transactions')
+        .set('Authorization', `Bearer ${validToken}`);
       expect(res.status).toBe(200);
     });
   });
