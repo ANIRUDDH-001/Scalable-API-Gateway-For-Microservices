@@ -33,6 +33,18 @@ ALL API routes use /api/v1/ prefix. Example: /api/v1/auth/register
 - Services MUST validate x-internal-key — return 403 if missing or wrong
 - x-request-id (UUID) generated at gateway, forwarded to all services
 
+## Internal Service Key Pattern
+
+Every service validates `x-internal-key` on all routes except `/health`.
+The key is set in each service's `.env` as `INTERNAL_SERVICE_KEY` and must
+match across all services and the gateway.
+
+Gateway injects the key via `injectHeaders.middleware.js` → `proxyReq.setHeader('x-internal-key', ...)`.
+Services validate via `validateInternalKey` middleware registered before all route handlers.
+Returns 403 `{ status: 'error', message: 'Forbidden — direct access not permitted' }`.
+
+Verify at any time: `bash scripts/verify-internal-key.sh`
+
 ## File naming
 
 - Middleware: name.middleware.js
