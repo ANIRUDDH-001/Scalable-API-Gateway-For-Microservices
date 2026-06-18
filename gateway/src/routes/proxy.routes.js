@@ -2,6 +2,7 @@ const { createProxyMiddleware } = require('http-proxy-middleware');
 const config = require('../config');
 const { injectGatewayHeaders } = require('../middleware/injectHeaders.middleware');
 const { authenticate } = require('../middleware/auth.middleware');
+const { authLimiter } = require('../middleware/rateLimit.middleware');
 
 /**
  * Creates a proxy middleware for a given upstream target.
@@ -36,8 +37,8 @@ const makeProxy = (target, pathPrefix) =>
  * Auth middleware (M2-P1-SP2) will be inserted between route and proxy.
  */
 const registerProxyRoutes = (app) => {
-  // Public routes — no auth middleware yet (added in M2-P1-SP2)
-  app.use('/api/v1/auth', makeProxy(config.services.auth, '/api/v1/auth'));
+  // Auth: public but rate-limited to prevent brute-force
+  app.use('/api/v1/auth', authLimiter, makeProxy(config.services.auth, '/api/v1/auth'));
 
   // Protected routes — auth middleware added in M2-P1-SP2
   app.use(

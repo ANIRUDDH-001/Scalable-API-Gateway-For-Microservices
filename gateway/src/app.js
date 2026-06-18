@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const { assignRequestId } = require('./middleware/requestId.middleware');
+const { globalLimiter } = require('./middleware/rateLimit.middleware');
 const healthRouter = require('./routes/health.routes');
 
 const app = express();
@@ -12,6 +13,7 @@ app.use(assignRequestId);
 // Security and parsing middleware
 app.use(helmet());
 app.use(cors());
+app.use(globalLimiter);
 app.use(express.json({ limit: '10kb' }));
 
 // Gateway-level routes (not proxied)

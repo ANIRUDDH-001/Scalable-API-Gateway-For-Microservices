@@ -58,6 +58,8 @@ describe('Gateway Proxy Routing', () => {
         .get('/api/v1/accounts')
         .set('Authorization', `Bearer ${validToken}`);
       expect(res.status).toBe(200);
+      expect(res.headers['ratelimit']).toBeDefined();
+      expect(res.headers['ratelimit-policy']).toBeDefined();
     });
 
     it('returns 502 when accounts-service is unreachable', async () => {
