@@ -1,19 +1,18 @@
 const { createProxyMiddleware } = require('http-proxy-middleware');
-const config = require('../config');
 const { injectGatewayHeaders } = require('../middleware/injectHeaders.middleware');
 const { authenticate } = require('../middleware/auth.middleware');
 const { authLimiter } = require('../middleware/rateLimit.middleware');
+const routeTable = require('../config/routes.config');
 
-/**
- * Creates a proxy middleware for a given upstream target.
- * @param {string} target - Upstream service base URL
- * @param {string} pathPrefix - The /api/v1/service-name prefix to strip
- */
-const makeProxy = (target, pathPrefix) =>
+const LIMITERS = {
+  auth: authLimiter,
+};
+
+const makeProxy = (target, stripPath) =>
   createProxyMiddleware({
     target,
     changeOrigin: true,
-    pathRewrite: { [`^${pathPrefix}`]: '' },
+    pathRewrite: { [`^${stripPath}`]: '' },
     on: {
       proxyReq: injectGatewayHeaders,
       error: (err, req, res) => {
@@ -31,26 +30,22 @@ const makeProxy = (target, pathPrefix) =>
     },
   });
 
-/**
- * Registers all /api/v1/* proxy routes on the Express app.
- * Must be called BEFORE the 404 handler in index.js.
- * Auth middleware (M2-P1-SP2) will be inserted between route and proxy.
- */
 const registerProxyRoutes = (app) => {
-  // Auth: public but rate-limited to prevent brute-force
-  app.use('/api/v1/auth', authLimiter, makeProxy(config.services.auth, '/api/v1/auth'));
+  routeTable.forEach(({ prefix, target, stripPath, isPublic, limiter }) => {
+    const middlewareChain = [];
 
-  // Protected routes — auth middleware added in M2-P1-SP2
-  app.use(
-    '/api/v1/accounts',
-    authenticate,
-    makeProxy(config.services.accounts, '/api/v1/accounts')
-  );
-  app.use(
-    '/api/v1/transactions',
-    authenticate,
-    makeProxy(config.services.transactions, '/api/v1/transactions')
-  );
+    if (limiter && LIMITERS[limiter]) {
+      middlewareChain.push(LIMITERS[limiter]);
+    }
+
+    if (!isPublic) {
+      middlewareChain.push(authenticate);
+    }
+
+    middlewareChain.push(makeProxy(target, stripPath));
+
+    app.use(prefix, ...middlewareChain);
+  });
 };
 
 module.exports = { registerProxyRoutes };
