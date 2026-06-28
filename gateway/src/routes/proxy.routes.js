@@ -3,6 +3,7 @@ const { injectGatewayHeaders } = require('../middleware/injectHeaders.middleware
 const { authenticate } = require('../middleware/auth.middleware');
 const { authLimiter } = require('../middleware/rateLimit.middleware');
 const routeTable = require('../config/routes.config');
+const logger = require('../utils/logger');
 
 const LIMITERS = {
   auth: authLimiter,
@@ -16,9 +17,11 @@ const makeProxy = (target, stripPath) =>
     on: {
       proxyReq: injectGatewayHeaders,
       error: (err, req, res) => {
-        // Log the error — logger added in M2-P3-SP1, using console for now
-        // eslint-disable-next-line no-console
-        console.error(`Proxy error [${target}]: ${err.message}`);
+        logger.error('Upstream proxy error', {
+          target,
+          error: err.message,
+          requestId: req.requestId,
+        });
         // Only send response if headers not already sent
         if (!res.headersSent) {
           res.status(502).json({
