@@ -6,7 +6,8 @@ const authRouter = require('./routes/auth.routes');
 
 const app = express();
 
-app.use(cors());
+// Internal service — CORS disabled. Access controlled via x-internal-key header.
+app.use(cors({ origin: false }));
 app.use(express.json());
 app.use(validateInternalKey);
 
