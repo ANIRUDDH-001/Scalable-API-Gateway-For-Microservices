@@ -8,8 +8,8 @@ const app = express();
 
 // Internal service — CORS disabled. Access controlled via x-internal-key header.
 app.use(cors({ origin: false }));
-app.use(express.json());
 app.use(validateInternalKey);
+app.use(express.json());
 
 app.use(healthRouter);
 app.use('/accounts', accountsRouter);
