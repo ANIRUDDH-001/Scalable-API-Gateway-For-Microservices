@@ -7,6 +7,11 @@ const transactionSchema = new mongoose.Schema(
       required: [true, 'accountId is required'],
       index: true,
     },
+    userId: {
+      type: String,
+      required: [true, 'userId is required'],
+      index: true,
+    },
     type: {
       type: String,
       enum: {
@@ -48,5 +53,6 @@ const transactionSchema = new mongoose.Schema(
 );
 
 transactionSchema.index({ accountId: 1, createdAt: -1 });
+transactionSchema.index({ userId: 1, createdAt: -1 });
 
 module.exports = mongoose.model('Transaction', transactionSchema);

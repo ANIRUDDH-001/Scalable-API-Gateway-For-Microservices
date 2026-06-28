@@ -28,10 +28,17 @@ describe('transactions.controller', () => {
             .mockResolvedValue([{ accountId: 'acc_001', type: 'credit', amount: 100 }]),
         }),
       });
-      const req = { query: {} };
+      const req = { query: {}, headers: { 'x-user-id': 'usr_001' } };
       const res = mockRes();
       await getTransactions(req, res);
       expect(res.status).toHaveBeenCalledWith(200);
+    });
+
+    it('returns 400 when x-user-id header is missing', async () => {
+      const req = { query: {}, headers: {} };
+      const res = mockRes();
+      await getTransactions(req, res);
+      expect(res.status).toHaveBeenCalledWith(400);
     });
 
     it('applies filters and limits correctly', async () => {
@@ -42,10 +49,12 @@ describe('transactions.controller', () => {
       });
       const req = {
         query: { accountId: 'acc1', type: 'credit', status: 'completed', limit: '50' },
+        headers: { 'x-user-id': 'usr_001' },
       };
       const res = mockRes();
       await getTransactions(req, res);
       expect(Transaction.find).toHaveBeenCalledWith({
+        userId: 'usr_001',
         accountId: 'acc1',
         type: 'credit',
         status: 'completed',
@@ -58,7 +67,7 @@ describe('transactions.controller', () => {
           limit: jest.fn().mockRejectedValue(new Error('DB error')),
         }),
       });
-      const req = { query: {} };
+      const req = { query: {}, headers: { 'x-user-id': 'usr_001' } };
       const res = mockRes();
       await getTransactions(req, res);
       expect(res.status).toHaveBeenCalledWith(500);
@@ -96,13 +105,33 @@ describe('transactions.controller', () => {
   });
 
   describe('createTransaction', () => {
+    it('returns 400 when x-user-id header is missing', async () => {
+      const req = { body: { accountId: 'acc_001', type: 'credit', amount: 500 }, headers: {} };
+      const res = mockRes();
+      await createTransaction(req, res);
+      expect(res.status).toHaveBeenCalledWith(400);
+    });
+
     it('returns 201 on successful creation', async () => {
-      const mockTx = { _id: 'tx_1', accountId: 'acc_001', type: 'credit', amount: 500 };
+      const mockTx = {
+        _id: 'tx_1',
+        accountId: 'acc_001',
+        type: 'credit',
+        amount: 500,
+        userId: 'usr_001',
+      };
       Transaction.create.mockResolvedValue(mockTx);
-      const req = { body: { accountId: 'acc_001', type: 'credit', amount: 500 } };
+      const req = {
+        body: { accountId: 'acc_001', type: 'credit', amount: 500 },
+        headers: { 'x-user-id': 'usr_001' },
+      };
       const res = mockRes();
       await createTransaction(req, res);
       expect(res.status).toHaveBeenCalledWith(201);
+      // Verify userId was merged into the document
+      expect(Transaction.create).toHaveBeenCalledWith(
+        expect.objectContaining({ userId: 'usr_001' })
+      );
     });
 
     it('returns 400 on Mongoose ValidationError', async () => {
@@ -110,14 +139,18 @@ describe('transactions.controller', () => {
       validationError.name = 'ValidationError';
       validationError.errors = { amount: { message: 'amount must be greater than 0' } };
       Transaction.create.mockRejectedValue(validationError);
-      const req = { body: { accountId: 'acc_001', type: 'credit', amount: -1 } };
+      const req = {
+        body: { accountId: 'acc_001', type: 'credit', amount: -1 },
+        headers: { 'x-user-id': 'usr_001' },
+      };
       const res = mockRes();
       await createTransaction(req, res);
       expect(res.status).toHaveBeenCalledWith(400);
     });
+
     it('returns 500 on other errors', async () => {
       Transaction.create.mockRejectedValue(new Error('Other error'));
-      const req = { body: {} };
+      const req = { body: {}, headers: { 'x-user-id': 'usr_001' } };
       const res = mockRes();
       await createTransaction(req, res);
       expect(res.status).toHaveBeenCalledWith(500);

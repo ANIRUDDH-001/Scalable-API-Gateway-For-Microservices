@@ -2,8 +2,15 @@ const Transaction = require('../models/transaction.model');
 
 const getTransactions = async (req, res) => {
   try {
+    const userId = req.headers['x-user-id'];
+    if (!userId) {
+      return res.status(400).json({ status: 'error', message: 'x-user-id header is required' });
+    }
+
     const { accountId, type, status, limit = 20 } = req.query;
-    const filter = {};
+
+    // Always scope to the authenticated user
+    const filter = { userId };
     if (accountId) {
       filter.accountId = accountId;
     }
@@ -18,9 +25,11 @@ const getTransactions = async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(Math.min(parseInt(limit, 10), 100));
 
-    res.status(200).json({ status: 'success', count: transactions.length, data: transactions });
+    return res
+      .status(200)
+      .json({ status: 'success', count: transactions.length, data: transactions });
   } catch (err) {
-    res.status(500).json({ status: 'error', message: err.message });
+    return res.status(500).json({ status: 'error', message: err.message });
   }
 };
 
@@ -41,8 +50,13 @@ const getTransaction = async (req, res) => {
 
 const createTransaction = async (req, res) => {
   try {
-    const transaction = await Transaction.create(req.body);
-    res.status(201).json({ status: 'success', data: transaction });
+    const userId = req.headers['x-user-id'];
+    if (!userId) {
+      return res.status(400).json({ status: 'error', message: 'x-user-id header is required' });
+    }
+
+    const transaction = await Transaction.create({ ...req.body, userId });
+    return res.status(201).json({ status: 'success', data: transaction });
   } catch (err) {
     if (err.name === 'ValidationError') {
       const messages = Object.values(err.errors).map((e) => e.message);
