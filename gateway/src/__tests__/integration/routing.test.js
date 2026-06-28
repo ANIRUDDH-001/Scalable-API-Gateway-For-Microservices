@@ -52,7 +52,9 @@ describe('Gateway Proxy Routing', () => {
 
   describe('GET /api/v1/accounts', () => {
     it('forwards to accounts-service and returns its response', async () => {
-      nock('http://localhost:3002').get('/').reply(200, { status: 'success', count: 3, data: [] });
+      nock('http://localhost:3002')
+        .get('/accounts')
+        .reply(200, { status: 'success', count: 3, data: [] });
 
       const res = await request(app)
         .get('/api/v1/accounts')
@@ -63,7 +65,7 @@ describe('Gateway Proxy Routing', () => {
     });
 
     it('returns 502 when accounts-service is unreachable', async () => {
-      nock('http://localhost:3002').get('/').replyWithError('ECONNREFUSED');
+      nock('http://localhost:3002').get('/accounts').replyWithError('ECONNREFUSED');
 
       const res = await request(app)
         .get('/api/v1/accounts')
@@ -75,7 +77,9 @@ describe('Gateway Proxy Routing', () => {
 
   describe('GET /api/v1/transactions', () => {
     it('forwards to transactions-service', async () => {
-      nock('http://localhost:3003').get('/').reply(200, { status: 'success', count: 0, data: [] });
+      nock('http://localhost:3003')
+        .get('/transactions')
+        .reply(200, { status: 'success', count: 0, data: [] });
 
       const res = await request(app)
         .get('/api/v1/transactions')

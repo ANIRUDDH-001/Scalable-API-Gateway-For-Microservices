@@ -13,7 +13,7 @@ const makeProxy = (target, stripPath) =>
   createProxyMiddleware({
     target,
     changeOrigin: true,
-    pathRewrite: { [`^${stripPath}`]: '' },
+    pathRewrite: (path, req) => req.originalUrl.replace(new RegExp(`^${stripPath}`), ''),
     on: {
       proxyReq: injectGatewayHeaders,
       error: (err, req, res) => {

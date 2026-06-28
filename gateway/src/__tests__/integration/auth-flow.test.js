@@ -50,7 +50,7 @@ describe('Auth flow integration', () => {
   });
 
   it('protected route → 200 with valid token', async () => {
-    nock('http://localhost:3002').get('/').reply(200, { status: 'success', data: [] });
+    nock('http://localhost:3002').get('/accounts').reply(200, { status: 'success', data: [] });
     const res = await request(app)
       .get('/api/v1/accounts')
       .set('Authorization', `Bearer ${validToken}`);

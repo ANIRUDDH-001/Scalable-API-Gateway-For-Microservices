@@ -23,14 +23,14 @@ const routes = [
   {
     prefix: '/api/v1/accounts',
     target: config.services.accounts,
-    stripPath: '/api/v1/accounts',
+    stripPath: '/api/v1',
     isPublic: false,
     limiter: null,
   },
   {
     prefix: '/api/v1/transactions',
     target: config.services.transactions,
-    stripPath: '/api/v1/transactions',
+    stripPath: '/api/v1',
     isPublic: false,
     limiter: null,
   },
