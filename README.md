@@ -81,8 +81,20 @@ Import `postman/fintech-gateway-v1.postman_collection.json` and
 
 See `docs/phase-1-routing.md` for full route map.
 
+## Security (Phase 2)
+
+- JWT authentication on all `/api/v1/accounts` and `/api/v1/transactions` routes
+- `Authorization: Bearer <token>` required header
+- Rate limiting: 100 req/15min globally, 10 failed auth attempts/10min on auth routes
+- Distributed request tracing via `X-Request-ID` response header
+- Security headers: CSP, HSTS, X-Frame-Options (via Helmet)
+- Input validation: 422 with errors array on invalid request body
+
+See `docs/phase-2-security-architecture.md` for full security pipeline.
+See `docs/logging-guide.md` for request tracing instructions.
+
 ## Phase Roadmap
 
 - [x] Phase 1 — Request routing foundation
-- [ ] Phase 2 — JWT auth, rate limiting, logging
+- [x] Phase 2 — JWT auth, rate limiting, logging
 - [ ] Phase 3 — Docker, Redis cache, Prometheus/Grafana, Render deployment
