@@ -20,30 +20,20 @@ app.put('/accounts/:id', updateAccountRules, handleValidation, (req, res) =>
 
 describe('Accounts Validate Middleware', () => {
   describe('createAccountRules', () => {
-    it('returns 422 if userId is missing', async () => {
-      const res = await request(app).post('/accounts').send({ type: 'savings' });
-      expect(res.status).toBe(422);
-      expect(res.body.errors[0].msg).toMatch(/userId is required/i);
-    });
-
     it('returns 422 if type is invalid', async () => {
-      const res = await request(app).post('/accounts').send({ userId: 'u1', type: 'invalid' });
+      const res = await request(app).post('/accounts').send({ type: 'invalid' });
       expect(res.status).toBe(422);
       expect(res.body.errors[0].msg).toMatch(/type must be/i);
     });
 
     it('returns 422 if currency is not 3 uppercase letters', async () => {
-      const res = await request(app)
-        .post('/accounts')
-        .send({ userId: 'u1', type: 'savings', currency: 'us' });
+      const res = await request(app).post('/accounts').send({ type: 'savings', currency: 'us' });
       expect(res.status).toBe(422);
       expect(res.body.errors[0].msg).toMatch(/currency must be/i);
     });
 
     it('returns 200 for valid input', async () => {
-      const res = await request(app)
-        .post('/accounts')
-        .send({ userId: 'u1', type: 'savings', currency: 'USD' });
+      const res = await request(app).post('/accounts').send({ type: 'savings', currency: 'USD' });
       expect(res.status).toBe(200);
     });
   });

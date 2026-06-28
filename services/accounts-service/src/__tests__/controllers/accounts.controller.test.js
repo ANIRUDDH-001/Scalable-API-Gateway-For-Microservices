@@ -18,27 +18,26 @@ const mockReq = (overrides = {}) => ({
   params: {},
   query: {},
   body: {},
+  headers: { 'x-user-id': 'usr_test_001' },
   ...overrides,
 });
 
 describe('accounts.controller', () => {
   describe('getAccounts', () => {
-    it('returns all accounts when no userId query param', () => {
-      const req = mockReq();
+    it('returns accounts for the authenticated user', () => {
+      const req = mockReq({ headers: { 'x-user-id': 'usr_seed_001' } });
       const res = mockRes();
       getAccounts(req, res);
       expect(res.status).toHaveBeenCalledWith(200);
-      expect(res.json).toHaveBeenCalledWith(
-        expect.objectContaining({ status: 'success', count: expect.any(Number) })
-      );
-    });
-
-    it('filters by userId when provided', () => {
-      const req = mockReq({ query: { userId: 'usr_seed_001' } });
-      const res = mockRes();
-      getAccounts(req, res);
       const call = res.json.mock.calls[0][0];
       expect(call.data.every((a) => a.userId === 'usr_seed_001')).toBe(true);
+    });
+
+    it('returns 400 when x-user-id header is missing', () => {
+      const req = mockReq({ headers: {} });
+      const res = mockRes();
+      getAccounts(req, res);
+      expect(res.status).toHaveBeenCalledWith(400);
     });
   });
 
@@ -59,22 +58,15 @@ describe('accounts.controller', () => {
   });
 
   describe('createAccount', () => {
-    it('returns 400 when userId is missing', () => {
-      const req = mockReq({ body: { type: 'savings' } });
+    it('returns 400 when x-user-id header is missing', () => {
+      const req = mockReq({ headers: {}, body: { type: 'savings' } });
       const res = mockRes();
       createAccount(req, res);
       expect(res.status).toHaveBeenCalledWith(400);
     });
 
-    it('returns 400 for invalid account type', () => {
-      const req = mockReq({ body: { userId: 'usr_1', type: 'invalid' } });
-      const res = mockRes();
-      createAccount(req, res);
-      expect(res.status).toHaveBeenCalledWith(400);
-    });
-
-    it('creates account with valid body', () => {
-      const req = mockReq({ body: { userId: 'usr_new', type: 'savings' } });
+    it('creates account using userId from header', () => {
+      const req = mockReq({ headers: { 'x-user-id': 'usr_new' }, body: { type: 'savings' } });
       const res = mockRes();
       createAccount(req, res);
       expect(res.status).toHaveBeenCalledWith(201);

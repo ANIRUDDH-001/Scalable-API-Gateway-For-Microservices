@@ -1,9 +1,12 @@
 const store = require('../data/accounts.store');
 
 const getAccounts = (req, res) => {
-  const { userId } = req.query;
-  const accounts = userId ? store.findByUserId(userId) : store.findAll();
-  res.status(200).json({ status: 'success', count: accounts.length, data: accounts });
+  const userId = req.headers['x-user-id'];
+  if (!userId) {
+    return res.status(400).json({ status: 'error', message: 'x-user-id header is required' });
+  }
+  const accounts = store.findByUserId(userId);
+  return res.status(200).json({ status: 'success', count: accounts.length, data: accounts });
 };
 
 const getAccount = (req, res) => {
@@ -15,17 +18,11 @@ const getAccount = (req, res) => {
 };
 
 const createAccount = (req, res) => {
-  const { userId, type, currency } = req.body;
-  if (!userId || !type) {
-    return res.status(400).json({ status: 'error', message: 'userId and type are required' });
+  const userId = req.headers['x-user-id'];
+  if (!userId) {
+    return res.status(400).json({ status: 'error', message: 'x-user-id header is required' });
   }
-  const validTypes = ['savings', 'current', 'fd', 'rd'];
-  if (!validTypes.includes(type)) {
-    return res.status(400).json({
-      status: 'error',
-      message: `type must be one of: ${validTypes.join(', ')}`,
-    });
-  }
+  const { type, currency } = req.body;
   const account = store.create({ userId, type, currency });
   return res.status(201).json({ status: 'success', data: account });
 };

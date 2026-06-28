@@ -1,7 +1,6 @@
 const { body } = require('express-validator');
 
 const createAccountRules = [
-  body('userId').trim().notEmpty().withMessage('userId is required'),
   body('type')
     .trim()
     .isIn(['savings', 'current', 'fd', 'rd'])
