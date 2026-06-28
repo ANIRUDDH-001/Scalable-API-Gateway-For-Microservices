@@ -41,4 +41,4 @@ const authLimiter = buildLimiter({
   message: 'Too many failed authentication attempts. Try again in 10 minutes.',
 });
 
-module.exports = { globalLimiter, authLimiter };
+module.exports = { globalLimiter, authLimiter, buildLimiter };

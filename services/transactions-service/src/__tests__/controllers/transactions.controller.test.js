@@ -34,6 +34,24 @@ describe('transactions.controller', () => {
       expect(res.status).toHaveBeenCalledWith(200);
     });
 
+    it('applies filters and limits correctly', async () => {
+      Transaction.find.mockReturnValue({
+        sort: jest.fn().mockReturnValue({
+          limit: jest.fn().mockResolvedValue([]),
+        }),
+      });
+      const req = {
+        query: { accountId: 'acc1', type: 'credit', status: 'completed', limit: '50' },
+      };
+      const res = mockRes();
+      await getTransactions(req, res);
+      expect(Transaction.find).toHaveBeenCalledWith({
+        accountId: 'acc1',
+        type: 'credit',
+        status: 'completed',
+      });
+    });
+
     it('returns 500 on database error', async () => {
       Transaction.find.mockReturnValue({
         sort: jest.fn().mockReturnValue({
@@ -97,6 +115,13 @@ describe('transactions.controller', () => {
       await createTransaction(req, res);
       expect(res.status).toHaveBeenCalledWith(400);
     });
+    it('returns 500 on other errors', async () => {
+      Transaction.create.mockRejectedValue(new Error('Other error'));
+      const req = { body: {} };
+      const res = mockRes();
+      await createTransaction(req, res);
+      expect(res.status).toHaveBeenCalledWith(500);
+    });
   });
 
   describe('updateTransaction', () => {
@@ -116,6 +141,34 @@ describe('transactions.controller', () => {
       await updateTransaction(req, res);
       expect(res.status).toHaveBeenCalledWith(404);
     });
+    it('returns 400 on Mongoose ValidationError', async () => {
+      const err = new Error('Validation failed');
+      err.name = 'ValidationError';
+      err.errors = { status: { message: 'invalid status' } };
+      Transaction.findByIdAndUpdate.mockRejectedValue(err);
+      const req = { params: { id: 'tx_1' }, body: {} };
+      const res = mockRes();
+      await updateTransaction(req, res);
+      expect(res.status).toHaveBeenCalledWith(400);
+    });
+
+    it('returns 400 on CastError', async () => {
+      const err = new Error('CastError');
+      err.name = 'CastError';
+      Transaction.findByIdAndUpdate.mockRejectedValue(err);
+      const req = { params: { id: 'invalid' }, body: {} };
+      const res = mockRes();
+      await updateTransaction(req, res);
+      expect(res.status).toHaveBeenCalledWith(400);
+    });
+
+    it('returns 500 on other errors', async () => {
+      Transaction.findByIdAndUpdate.mockRejectedValue(new Error('Other error'));
+      const req = { params: { id: 'tx_1' }, body: {} };
+      const res = mockRes();
+      await updateTransaction(req, res);
+      expect(res.status).toHaveBeenCalledWith(500);
+    });
   });
 
   describe('deleteTransaction', () => {
@@ -134,6 +187,13 @@ describe('transactions.controller', () => {
       const res = mockRes();
       await deleteTransaction(req, res);
       expect(res.status).toHaveBeenCalledWith(404);
+    });
+    it('returns 500 on database error', async () => {
+      Transaction.findByIdAndDelete.mockRejectedValue(new Error('DB error'));
+      const req = { params: { id: 'tx_1' } };
+      const res = mockRes();
+      await deleteTransaction(req, res);
+      expect(res.status).toHaveBeenCalledWith(500);
     });
   });
 });

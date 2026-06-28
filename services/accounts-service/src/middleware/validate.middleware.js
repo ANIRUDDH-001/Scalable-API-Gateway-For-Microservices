@@ -10,6 +10,7 @@ const createAccountRules = [
     .optional()
     .trim()
     .isLength({ min: 3, max: 3 })
+    .withMessage('currency must be a 3-letter ISO code')
     .isUppercase()
     .withMessage('currency must be a 3-letter ISO code'),
 ];
