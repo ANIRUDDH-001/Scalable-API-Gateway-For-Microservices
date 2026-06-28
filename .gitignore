@@ -1,7 +1,9 @@
 node_modules/
 .env
 .env.docker
-logs/*.log
+**/logs/*.log
+**/logs/error.log
+**/logs/combined.log
 *.log
 dist/
 coverage/

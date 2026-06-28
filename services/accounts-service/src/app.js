@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 const { validateInternalKey } = require('./middleware/internalKey.middleware');
+const morgan = require('morgan');
+const logger = require('./utils/logger');
 const healthRouter = require('./routes/health.routes');
 const accountsRouter = require('./routes/accounts.routes');
 
@@ -9,6 +11,12 @@ const app = express();
 // Internal service — CORS disabled. Access controlled via x-internal-key header.
 app.use(cors({ origin: false }));
 app.use(validateInternalKey);
+app.use(
+  morgan('combined', {
+    stream: { write: (msg) => logger.http('HTTP', { msg: msg.trim() }) },
+    skip: (req) => req.path === '/health' && req.method === 'GET',
+  })
+);
 app.use(express.json());
 
 app.use(healthRouter);
