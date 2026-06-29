@@ -9,7 +9,7 @@ describe('Auth API (auth-service)', () => {
   let validToken;
 
   beforeAll(() => {
-    store.users = []; // Reset memory store
+    store.reset(); // Correctly clears the in-memory user store via the closure
   });
 
   it('registers a new user successfully', async () => {

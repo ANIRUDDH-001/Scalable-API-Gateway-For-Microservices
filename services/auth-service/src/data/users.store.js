@@ -24,4 +24,9 @@ const create = ({ email, name, hashedPassword, role = 'customer' }) => {
 
 const count = () => users.length;
 
-module.exports = { findByEmail, findById, create, count };
+/** Clears all in-memory users. For use in tests only. */
+const reset = () => {
+  users.length = 0;
+};
+
+module.exports = { findByEmail, findById, create, count, reset };

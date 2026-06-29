@@ -1,11 +1,16 @@
 process.env.INTERNAL_SERVICE_KEY = 'test_key';
 const request = require('supertest');
 const app = require('../app');
+const store = require('../data/accounts.store');
 
 const TEST_USER_ID = 'usr_test_001';
 
 describe('Accounts API (accounts-service)', () => {
   let createdAccountId;
+
+  beforeAll(() => {
+    store.reset(); // Restore store to clean seed state
+  });
 
   it('creates an account successfully', async () => {
     const res = await request(app)
