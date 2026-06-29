@@ -33,11 +33,12 @@ const accounts = [
   },
 ];
 
-const findAll = () => [...accounts];
+const findAll = (limit = 100) => [...accounts].slice(0, limit);
 
 const findById = (id) => accounts.find((a) => a.id === id) || null;
 
-const findByUserId = (userId) => accounts.filter((a) => a.userId === userId);
+const findByUserId = (userId, limit = 50) =>
+  accounts.filter((a) => a.userId === userId).slice(0, limit);
 
 const create = ({ userId, type, currency = 'INR' }) => {
   const account = {

@@ -25,12 +25,25 @@ const mockReq = (overrides = {}) => ({
 describe('accounts.controller', () => {
   describe('getAccounts', () => {
     it('returns accounts for the authenticated user', () => {
-      const req = mockReq({ headers: { 'x-user-id': 'usr_seed_001' } });
+      const req = mockReq({ headers: { 'x-user-id': 'usr_seed_001' }, query: {} });
       const res = mockRes();
       getAccounts(req, res);
       expect(res.status).toHaveBeenCalledWith(200);
       const call = res.json.mock.calls[0][0];
       expect(call.data.every((a) => a.userId === 'usr_seed_001')).toBe(true);
+    });
+
+    it('respects the limit query parameter (max 100)', () => {
+      const req = mockReq({
+        headers: { 'x-user-id': 'usr_seed_001' },
+        query: { limit: '999' },
+      });
+      const res = mockRes();
+      getAccounts(req, res);
+      expect(res.status).toHaveBeenCalledWith(200);
+      const call = res.json.mock.calls[0][0];
+      // Count cannot exceed 100 regardless of requested limit
+      expect(call.data.length).toBeLessThanOrEqual(100);
     });
 
     it('returns 400 when x-user-id header is missing', () => {

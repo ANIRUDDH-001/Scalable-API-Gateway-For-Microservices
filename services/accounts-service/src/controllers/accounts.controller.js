@@ -5,7 +5,8 @@ const getAccounts = (req, res) => {
   if (!userId) {
     return res.status(400).json({ status: 'error', message: 'x-user-id header is required' });
   }
-  const accounts = store.findByUserId(userId);
+  const limit = Math.min(parseInt(req.query.limit, 10) || 50, 100);
+  const accounts = store.findByUserId(userId, limit);
   return res.status(200).json({ status: 'success', count: accounts.length, data: accounts });
 };
 
