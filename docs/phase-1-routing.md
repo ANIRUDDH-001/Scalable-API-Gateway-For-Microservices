@@ -13,8 +13,11 @@ a backend service.
    - `/api/v1/auth/*` → auth-service:3001
    - `/api/v1/accounts/*` → accounts-service:3002
    - `/api/v1/transactions/*` → transactions-service:3003
-3. Gateway strips the route prefix via `pathRewrite` so services receive clean paths.
-   Example: `/api/v1/accounts/acc_001` becomes `/acc_001` at accounts-service.
+3. Gateway strips the `/api/v1` prefix via `pathRewrite` so services receive paths that
+   match their internal router mounts.
+   - Auth routes: `/api/v1/auth/register` → `/register` (strips `/api/v1/auth`)
+   - Account routes: `/api/v1/accounts/acc_001` → `/accounts/acc_001` (strips `/api/v1`)
+   - Transaction routes: `/api/v1/transactions/tx_1` → `/transactions/tx_1` (strips `/api/v1`)
 4. Gateway injects `x-internal-key` header on every forwarded request.
 5. Service validates `x-internal-key` — returns 403 if missing or wrong.
 6. Service processes the request and returns a response.
@@ -30,19 +33,20 @@ body into RAM before forwarding.
 
 ## Route Map
 
-| Client Path                     | Service                   | Service Path   |
-| ------------------------------- | ------------------------- | -------------- |
-| POST /api/v1/auth/register      | auth-service:3001         | POST /register |
-| POST /api/v1/auth/login         | auth-service:3001         | POST /login    |
-| GET /api/v1/accounts            | accounts-service:3002     | GET /          |
-| GET /api/v1/accounts/:id        | accounts-service:3002     | GET /:id       |
-| POST /api/v1/accounts           | accounts-service:3002     | POST /         |
-| PUT /api/v1/accounts/:id        | accounts-service:3002     | PUT /:id       |
-| DELETE /api/v1/accounts/:id     | accounts-service:3002     | DELETE /:id    |
-| GET /api/v1/transactions        | transactions-service:3003 | GET /          |
-| POST /api/v1/transactions       | transactions-service:3003 | POST /         |
-| GET /api/v1/transactions/:id    | transactions-service:3003 | GET /:id       |
-| DELETE /api/v1/transactions/:id | transactions-service:3003 | DELETE /:id    |
+| Client Path                     | Service                   | Service Path             |
+| ------------------------------- | ------------------------- | ------------------------ |
+| POST /api/v1/auth/register      | auth-service:3001         | POST /register           |
+| POST /api/v1/auth/login         | auth-service:3001         | POST /login              |
+| POST /api/v1/auth/refresh       | auth-service:3001         | POST /refresh            |
+| GET /api/v1/accounts            | accounts-service:3002     | GET /accounts            |
+| GET /api/v1/accounts/:id        | accounts-service:3002     | GET /accounts/:id        |
+| POST /api/v1/accounts           | accounts-service:3002     | POST /accounts           |
+| PUT /api/v1/accounts/:id        | accounts-service:3002     | PUT /accounts/:id        |
+| DELETE /api/v1/accounts/:id     | accounts-service:3002     | DELETE /accounts/:id     |
+| GET /api/v1/transactions        | transactions-service:3003 | GET /transactions        |
+| POST /api/v1/transactions       | transactions-service:3003 | POST /transactions       |
+| GET /api/v1/transactions/:id    | transactions-service:3003 | GET /transactions/:id    |
+| DELETE /api/v1/transactions/:id | transactions-service:3003 | DELETE /transactions/:id |
 
 ## Health Endpoint
 

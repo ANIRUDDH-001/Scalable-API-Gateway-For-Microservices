@@ -22,8 +22,22 @@ Single entry point for routing, authentication, rate limiting, caching, and obse
 
 ### Prerequisites
 
-- Node.js 20 (`nvm use`)
-- MongoDB running locally (`mongod`)
+- Node.js 20 (`nvm use` — requires [nvm](https://github.com/nvm-sh/nvm))
+- MongoDB 7.x running locally
+
+**Start MongoDB (first time):**
+
+```bash
+# macOS (Homebrew)
+brew services start mongodb-community
+
+# Linux / WSL
+sudo systemctl start mongod
+
+# Or start manually (creates a data dir if it doesn't exist)
+mkdir -p /tmp/mongodb-data
+mongod --dbpath /tmp/mongodb-data --port 27017 --fork --logpath /tmp/mongod.log
+```
 
 ### Install
 
@@ -81,6 +95,10 @@ Import `postman/fintech-gateway-v1.postman_collection.json` and
 
 See `docs/phase-1-routing.md` for full route map.
 
+> **Note on path forwarding:** The gateway strips `/api/v1` (not the full prefix) when routing
+> to accounts-service and transactions-service. This means accounts-service receives requests at
+> `/accounts/*` and transactions-service at `/transactions/*`. See `docs/phase-1-routing.md`.
+
 ## Security (Phase 2)
 
 - JWT authentication on all `/api/v1/accounts` and `/api/v1/transactions` routes
@@ -98,3 +116,4 @@ See `docs/logging-guide.md` for request tracing instructions.
 - [x] Phase 1 — Request routing foundation
 - [x] Phase 2 — JWT auth, rate limiting, logging
 - [ ] Phase 3 — Docker, Redis cache, Prometheus/Grafana, Render deployment
+  - `redis` and `prom-client` are already listed as gateway dependencies, ready for Phase 3 implementation
