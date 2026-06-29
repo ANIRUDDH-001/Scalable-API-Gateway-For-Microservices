@@ -100,4 +100,56 @@ describe('Gateway Proxy Routing', () => {
       expect(res.status).toBe(404);
     });
   });
+
+  describe('Proxy path stripping', () => {
+    it('strips /api/v1 and forwards /accounts path to accounts-service', async () => {
+      // Intercept ONLY on the expected path — if pathRewrite is wrong, nock won't match
+      // and the test will get a connection error (502), not 200
+      nock('http://localhost:3002')
+        .get('/accounts')
+        .reply(200, { status: 'success', count: 0, data: [] });
+
+      const res = await request(app)
+        .get('/api/v1/accounts')
+        .set('Authorization', `Bearer ${validToken}`);
+
+      expect(res.status).toBe(200);
+    });
+
+    it('strips /api/v1 and forwards /accounts/:id path to accounts-service', async () => {
+      nock('http://localhost:3002')
+        .get('/accounts/acc_001')
+        .reply(200, { status: 'success', data: { id: 'acc_001' } });
+
+      const res = await request(app)
+        .get('/api/v1/accounts/acc_001')
+        .set('Authorization', `Bearer ${validToken}`);
+
+      expect(res.status).toBe(200);
+    });
+
+    it('strips /api/v1 and forwards /transactions path to transactions-service', async () => {
+      nock('http://localhost:3003')
+        .get('/transactions')
+        .reply(200, { status: 'success', count: 0, data: [] });
+
+      const res = await request(app)
+        .get('/api/v1/transactions')
+        .set('Authorization', `Bearer ${validToken}`);
+
+      expect(res.status).toBe(200);
+    });
+
+    it('forwards /api/v1/auth/register as /register to auth-service (auth has own stripPath)', async () => {
+      nock('http://localhost:3001')
+        .post('/register')
+        .reply(201, { status: 'success', data: { accessToken: 'tok' } });
+
+      const res = await request(app)
+        .post('/api/v1/auth/register')
+        .send({ email: 'x@x.com', password: 'Pass1234', name: 'X' });
+
+      expect(res.status).toBe(201);
+    });
+  });
 });

@@ -46,3 +46,55 @@ describe('rateLimit middleware', () => {
     expect(res.body.message).toBe('Too many requests');
   });
 });
+
+describe('authLimiter — skipSuccessfulRequests behaviour', () => {
+  let authApp;
+
+  beforeEach(() => {
+    authApp = express();
+    // Tight limiter that mirrors authLimiter settings: skip successful requests
+    const testAuthLimiter = buildLimiter({
+      windowMs: 60000,
+      max: 3,
+      skipSuccessfulRequests: true,
+      message: 'Too many failed attempts',
+    });
+    authApp.use(testAuthLimiter);
+    // Simulate: return 401 for wrong password, 200 for correct
+    authApp.post('/login', (req, res) => {
+      if (req.headers['x-test-fail'] === 'true') {
+        return res.status(401).json({ status: 'error', message: 'Invalid credentials' });
+      }
+      return res.status(200).json({ status: 'success', data: { token: 'abc' } });
+    });
+  });
+
+  it('successful requests do not count toward the limit', async () => {
+    // Make more successful requests than the limit — should never hit 429
+    for (let i = 0; i < 5; i++) {
+      const res = await request(authApp).post('/login');
+      expect(res.status).toBe(200);
+    }
+  });
+
+  it('failed requests count toward the limit and trigger 429', async () => {
+    // Send 3 failed requests (max = 3)
+    for (let i = 0; i < 3; i++) {
+      await request(authApp).post('/login').set('x-test-fail', 'true');
+    }
+    // 4th failed request should be rate limited
+    const res = await request(authApp).post('/login').set('x-test-fail', 'true');
+    expect(res.status).toBe(429);
+    expect(res.body.message).toBe('Too many failed attempts');
+  });
+
+  it('a successful login after failed attempts still works (resets nothing, just not counted)', async () => {
+    // Send 2 failed attempts (under the limit of 3)
+    for (let i = 0; i < 2; i++) {
+      await request(authApp).post('/login').set('x-test-fail', 'true');
+    }
+    // A successful login must still go through
+    const res = await request(authApp).post('/login');
+    expect(res.status).toBe(200);
+  });
+});
