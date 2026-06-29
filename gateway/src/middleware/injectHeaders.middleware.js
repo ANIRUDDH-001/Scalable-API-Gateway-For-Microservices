@@ -29,8 +29,6 @@ const injectGatewayHeaders = (proxyReq, req) => {
     proxyReq.setHeader('x-user-email', req.user.email);
     proxyReq.setHeader('x-user-role', req.user.role);
   }
-
-  // x-request-id forwarding added in M2-P1-SP3
 };
 
 module.exports = { injectGatewayHeaders };

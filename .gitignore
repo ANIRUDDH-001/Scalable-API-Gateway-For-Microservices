@@ -8,3 +8,10 @@ node_modules/
 dist/
 coverage/
 .DS_Store
+
+# AI context files — not for version control
+GEMINI.md
+GEMINI*.md
+
+**/.env
+gateway/logs/*.log
