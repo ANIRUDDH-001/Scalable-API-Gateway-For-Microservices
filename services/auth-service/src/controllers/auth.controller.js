@@ -1,32 +1,29 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { validationResult } = require('express-validator');
-const store = require('../data/users.store');
+const User = require('../models/user.model');
 const config = require('../config');
 
 const BCRYPT_ROUNDS = 10;
 
 /** Strips password from user object before sending to client. */
-const sanitiseUser = ({ id, email, name, role, createdAt }) => ({
-  id,
-  email,
-  name,
-  role,
-  createdAt,
-});
+const sanitiseUser = (user) => {
+  const obj = user.toJSON();
+  return obj;
+};
 
 const signAccessToken = (user) =>
-  jwt.sign({ id: user.id, email: user.email, role: user.role }, config.jwt.secret, {
+  jwt.sign({ id: user._id || user.id, email: user.email, role: user.role }, config.jwt.secret, {
     expiresIn: config.jwt.expiresIn,
     issuer: 'auth-service',
-    subject: user.id,
+    subject: String(user._id || user.id),
   });
 
 const signRefreshToken = (user) =>
-  jwt.sign({ id: user.id, type: 'refresh' }, config.jwt.secret, {
+  jwt.sign({ id: user._id || user.id, type: 'refresh' }, config.jwt.secret, {
     expiresIn: config.jwt.refreshExpiresIn,
     issuer: 'auth-service',
-    subject: user.id,
+    subject: String(user._id || user.id),
   });
 
 const register = async (req, res) => {
@@ -37,25 +34,30 @@ const register = async (req, res) => {
 
   const { email, password, name } = req.body;
 
-  if (store.findByEmail(email)) {
-    return res.status(409).json({ status: 'error', message: 'Email already registered' });
+  try {
+    const existingUser = await User.findOne({ email: email.toLowerCase().trim() });
+    if (existingUser) {
+      return res.status(409).json({ status: 'error', message: 'Email already registered' });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS);
+    const user = await User.create({ email, name, password: hashedPassword });
+
+    const accessToken = signAccessToken(user);
+    const refreshToken = signRefreshToken(user);
+
+    return res.status(201).json({
+      status: 'success',
+      data: {
+        accessToken,
+        refreshToken,
+        expiresIn: config.jwt.expiresIn,
+        user: sanitiseUser(user),
+      },
+    });
+  } catch (err) {
+    return res.status(500).json({ status: 'error', message: err.message });
   }
-
-  const hashedPassword = await bcrypt.hash(password, BCRYPT_ROUNDS);
-  const user = store.create({ email, name, hashedPassword });
-
-  const accessToken = signAccessToken(user);
-  const refreshToken = signRefreshToken(user);
-
-  return res.status(201).json({
-    status: 'success',
-    data: {
-      accessToken,
-      refreshToken,
-      expiresIn: config.jwt.expiresIn,
-      user: sanitiseUser(user),
-    },
-  });
 };
 
 const login = async (req, res) => {
@@ -65,33 +67,38 @@ const login = async (req, res) => {
   }
 
   const { email, password } = req.body;
-  const user = store.findByEmail(email.toLowerCase().trim());
 
-  // Constant-time comparison — do not short-circuit on user not found
-  // to prevent email enumeration timing attacks
-  const dummyHash = '$2a$10$invalidhashtopreventtimingattackonuserenum';
-  const passwordToCompare = user ? user.password : dummyHash;
-  const isValid = await bcrypt.compare(password, passwordToCompare);
+  try {
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
 
-  if (!user || !isValid) {
-    return res.status(401).json({ status: 'error', message: 'Invalid email or password' });
+    // Constant-time comparison — do not short-circuit on user not found
+    // to prevent email enumeration timing attacks
+    const dummyHash = '$2a$10$invalidhashtopreventtimingattackonuserenum';
+    const passwordToCompare = user ? user.password : dummyHash;
+    const isValid = await bcrypt.compare(password, passwordToCompare);
+
+    if (!user || !isValid) {
+      return res.status(401).json({ status: 'error', message: 'Invalid email or password' });
+    }
+
+    const accessToken = signAccessToken(user);
+    const refreshToken = signRefreshToken(user);
+
+    return res.status(200).json({
+      status: 'success',
+      data: {
+        accessToken,
+        refreshToken,
+        expiresIn: config.jwt.expiresIn,
+        user: sanitiseUser(user),
+      },
+    });
+  } catch (err) {
+    return res.status(500).json({ status: 'error', message: err.message });
   }
-
-  const accessToken = signAccessToken(user);
-  const refreshToken = signRefreshToken(user);
-
-  return res.status(200).json({
-    status: 'success',
-    data: {
-      accessToken,
-      refreshToken,
-      expiresIn: config.jwt.expiresIn,
-      user: sanitiseUser(user),
-    },
-  });
 };
 
-const refresh = (req, res) => {
+const refresh = async (req, res) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
     return res.status(422).json({ status: 'error', errors: errors.array() });
@@ -106,7 +113,7 @@ const refresh = (req, res) => {
       return res.status(401).json({ status: 'error', message: 'Invalid token type' });
     }
 
-    const user = store.findById(decoded.id);
+    const user = await User.findById(decoded.id);
     if (!user) {
       return res.status(401).json({ status: 'error', message: 'User not found' });
     }

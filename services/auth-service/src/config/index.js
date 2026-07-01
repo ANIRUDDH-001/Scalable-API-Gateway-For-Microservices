@@ -1,6 +1,6 @@
 require('dotenv').config();
 
-const required = ['JWT_SECRET', 'INTERNAL_SERVICE_KEY'];
+const required = ['JWT_SECRET', 'INTERNAL_SERVICE_KEY', 'MONGODB_URI'];
 
 required.forEach((key) => {
   if (!process.env[key]) {
@@ -17,4 +17,5 @@ module.exports = {
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || '7d',
   },
   internalServiceKey: process.env.INTERNAL_SERVICE_KEY,
+  mongoUri: process.env.MONGODB_URI,
 };
