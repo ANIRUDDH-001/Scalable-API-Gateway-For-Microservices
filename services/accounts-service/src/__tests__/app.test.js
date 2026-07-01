@@ -8,28 +8,33 @@ jest.mock('../models/account.model', () => {
   return {
     find: jest.fn(() => ({ limit: jest.fn(async () => mockAccounts) })),
     findOne: jest.fn(async ({ id }) => mockAccounts.find((a) => a._id === id) || null),
-    findById: jest.fn(async (id) => mockAccounts.find((a) => String(a._id) === String(id) || a.id === id) || null),
+    findById: jest.fn(
+      async (id) => mockAccounts.find((a) => String(a._id) === String(id) || a.id === id) || null
+    ),
     create: jest.fn(async (data) => {
       const acc = { _id: 'acc_' + Date.now(), id: 'acc_' + Date.now(), ...data };
       mockAccounts.push(acc);
       return acc;
     }),
     findByIdAndUpdate: jest.fn(async (id, data) => {
-      const idx = mockAccounts.findIndex(a => String(a._id) === String(id) || a.id === id);
-      if (idx === -1) return null;
+      const idx = mockAccounts.findIndex((a) => String(a._id) === String(id) || a.id === id);
+      if (idx === -1) {
+        return null;
+      }
       mockAccounts[idx] = { ...mockAccounts[idx], ...data };
       return mockAccounts[idx];
     }),
     findByIdAndDelete: jest.fn(async (id) => {
-      const idx = mockAccounts.findIndex(a => String(a._id) === String(id) || a.id === id);
-      if (idx === -1) return null;
+      const idx = mockAccounts.findIndex((a) => String(a._id) === String(id) || a.id === id);
+      if (idx === -1) {
+        return null;
+      }
       return mockAccounts.splice(idx, 1)[0];
     }),
   };
 });
 
 const app = require('../app');
-const Account = require('../models/account.model');
 
 const TEST_USER_ID = 'usr_test_001';
 

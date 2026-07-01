@@ -9,7 +9,13 @@ jest.mock('../../models/user.model', () => {
   return {
     findOne: jest.fn(async ({ email }) => mockUsers.find((u) => u.email === email) || null),
     create: jest.fn(async (data) => {
-      const user = { _id: 'usr_' + Date.now(), ...data, toJSON: function () { return this; } };
+      const user = {
+        _id: 'usr_' + Date.now(),
+        ...data,
+        toJSON: function () {
+          return this;
+        },
+      };
       mockUsers.push(user);
       return user;
     }),
@@ -18,7 +24,6 @@ jest.mock('../../models/user.model', () => {
 });
 
 const app = require('../../app');
-const User = require('../../models/user.model');
 
 describe('Auth API (auth-service)', () => {
   let validToken;

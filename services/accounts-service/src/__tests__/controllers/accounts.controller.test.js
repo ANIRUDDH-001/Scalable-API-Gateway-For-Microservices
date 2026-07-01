@@ -1,24 +1,28 @@
 process.env.MONGODB_URI = 'mongodb://localhost:27017/test';
 
-let mockAccounts = [];
+const mockAccounts = [];
 jest.mock('../../models/account.model', () => {
   return {
     find: jest.fn(() => ({ limit: jest.fn(async () => mockAccounts) })),
-    findById: jest.fn(async (id) => mockAccounts.find(a => String(a._id) === String(id)) || null),
+    findById: jest.fn(async (id) => mockAccounts.find((a) => String(a._id) === String(id)) || null),
     create: jest.fn(async (data) => {
       const acc = { _id: 'acc_' + Date.now(), id: 'acc_' + Date.now(), ...data };
       mockAccounts.push(acc);
       return acc;
     }),
     findByIdAndUpdate: jest.fn(async (id, data) => {
-      const idx = mockAccounts.findIndex(a => String(a._id) === String(id));
-      if (idx === -1) return null;
+      const idx = mockAccounts.findIndex((a) => String(a._id) === String(id));
+      if (idx === -1) {
+        return null;
+      }
       mockAccounts[idx] = { ...mockAccounts[idx], ...data };
       return mockAccounts[idx];
     }),
     findByIdAndDelete: jest.fn(async (id) => {
-      const idx = mockAccounts.findIndex(a => String(a._id) === String(id));
-      if (idx === -1) return null;
+      const idx = mockAccounts.findIndex((a) => String(a._id) === String(id));
+      if (idx === -1) {
+        return null;
+      }
       return mockAccounts.splice(idx, 1)[0];
     }),
   };
@@ -31,7 +35,6 @@ const {
   updateAccount,
   deleteAccount,
 } = require('../../controllers/accounts.controller');
-const Account = require('../../models/account.model');
 
 // Mock response and request helpers
 const mockRes = () => {
