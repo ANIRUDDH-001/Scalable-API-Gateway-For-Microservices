@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+
+  api-gateway:
+    build: .
+    command: npm start --workspace=gateway
+    ports:
+      - "8080:8000"
+    environment:
+      - NODE_ENV=development
+      - JWT_SECRET=dev_jwt_secret_at_least_32_characters_long
+      - INTERNAL_SERVICE_KEY=dev_internal_key_shared_across_all_services
+      - AUTH_SERVICE_URL=http://auth-service:3001
+      - ACCOUNTS_SERVICE_URL=http://accounts-service:3002
+      - TRANSACTIONS_SERVICE_URL=http://transactions-service:3003
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - auth-service
+      - accounts-service
+      - transactions-service
+      - redis
+
+  auth-service:
+    build: .
+    command: npm start --workspace=services/auth-service
+    ports:
+      - "3001:3001"
+    environment:
+      - NODE_ENV=development
+      - PORT=3001
+      - JWT_SECRET=dev_jwt_secret_at_least_32_characters_long
+      - INTERNAL_SERVICE_KEY=dev_internal_key_shared_across_all_services
+      - MONGODB_URI=mongodb://mongodb:27017/auth_db
+    depends_on:
+      - mongodb
+
+  accounts-service:
+    build: .
+    command: npm start --workspace=services/accounts-service
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=development
+      - PORT=3002
+      - INTERNAL_SERVICE_KEY=dev_internal_key_shared_across_all_services
+      - MONGODB_URI=mongodb://mongodb:27017/accounts_db
+    depends_on:
+      - mongodb
+
+  transactions-service:
+    build: .
+    command: npm start --workspace=services/transactions-service
+    ports:
+      - "3003:3003"
+    environment:
+      - NODE_ENV=development
+      - PORT=3003
+      - INTERNAL_SERVICE_KEY=dev_internal_key_shared_across_all_services
+      - MONGODB_URI=mongodb://mongodb:27017/transactions_db
+    depends_on:
+      - mongodb
+
+volumes:
+  mongo-data:
