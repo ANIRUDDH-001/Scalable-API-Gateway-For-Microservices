@@ -1,15 +1,30 @@
 process.env.JWT_SECRET = 'test_jwt_secret_at_least_32_characters_long';
 process.env.INTERNAL_SERVICE_KEY = 'test_key';
+process.env.MONGODB_URI = 'mongodb://localhost:27017/test';
 
 const request = require('supertest');
+
+let mockUsers = [];
+jest.mock('../../models/user.model', () => {
+  return {
+    findOne: jest.fn(async ({ email }) => mockUsers.find((u) => u.email === email) || null),
+    create: jest.fn(async (data) => {
+      const user = { _id: 'usr_' + Date.now(), ...data, toJSON: function () { return this; } };
+      mockUsers.push(user);
+      return user;
+    }),
+    findById: jest.fn(async (id) => mockUsers.find((u) => u._id === id || u.id === id) || null),
+  };
+});
+
 const app = require('../../app');
-const store = require('../../data/users.store');
+const User = require('../../models/user.model');
 
 describe('Auth API (auth-service)', () => {
   let validToken;
 
   beforeAll(() => {
-    store.reset(); // Correctly clears the in-memory user store via the closure
+    mockUsers = [];
   });
 
   it('registers a new user successfully', async () => {

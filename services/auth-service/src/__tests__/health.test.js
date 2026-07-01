@@ -3,6 +3,7 @@ const request = require('supertest');
 // Set required env vars before requiring app
 process.env.JWT_SECRET = 'test_jwt_secret_at_least_32_characters';
 process.env.INTERNAL_SERVICE_KEY = 'test_internal_key';
+process.env.MONGODB_URI = 'mongodb://localhost:27017/test';
 
 const app = require('../app');
 

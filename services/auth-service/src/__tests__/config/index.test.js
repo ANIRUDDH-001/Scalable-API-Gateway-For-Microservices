@@ -18,6 +18,7 @@ describe('Auth Service Config', () => {
   it('loads config when all required env variables are present', () => {
     process.env.INTERNAL_SERVICE_KEY = 'key';
     process.env.JWT_SECRET = 'secret';
+    process.env.MONGODB_URI = 'mongodb://localhost:27017/test';
     const config = require('../../config');
     expect(config.internalServiceKey).toBe('key');
   });

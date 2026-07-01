@@ -1,3 +1,29 @@
+process.env.MONGODB_URI = 'mongodb://localhost:27017/test';
+
+let mockAccounts = [];
+jest.mock('../../models/account.model', () => {
+  return {
+    find: jest.fn(() => ({ limit: jest.fn(async () => mockAccounts) })),
+    findById: jest.fn(async (id) => mockAccounts.find(a => String(a._id) === String(id)) || null),
+    create: jest.fn(async (data) => {
+      const acc = { _id: 'acc_' + Date.now(), id: 'acc_' + Date.now(), ...data };
+      mockAccounts.push(acc);
+      return acc;
+    }),
+    findByIdAndUpdate: jest.fn(async (id, data) => {
+      const idx = mockAccounts.findIndex(a => String(a._id) === String(id));
+      if (idx === -1) return null;
+      mockAccounts[idx] = { ...mockAccounts[idx], ...data };
+      return mockAccounts[idx];
+    }),
+    findByIdAndDelete: jest.fn(async (id) => {
+      const idx = mockAccounts.findIndex(a => String(a._id) === String(id));
+      if (idx === -1) return null;
+      return mockAccounts.splice(idx, 1)[0];
+    }),
+  };
+});
+
 const {
   getAccounts,
   getAccount,
@@ -5,6 +31,7 @@ const {
   updateAccount,
   deleteAccount,
 } = require('../../controllers/accounts.controller');
+const Account = require('../../models/account.model');
 
 // Mock response and request helpers
 const mockRes = () => {
@@ -23,65 +50,79 @@ const mockReq = (overrides = {}) => ({
 });
 
 describe('accounts.controller', () => {
+  beforeAll(() => {
+    mockAccounts.push({
+      _id: 'acc_001',
+      id: 'acc_001',
+      userId: 'usr_seed_001',
+      type: 'savings',
+      balance: 1000,
+      currency: 'USD',
+      status: 'active',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    });
+  });
+
   describe('getAccounts', () => {
-    it('returns accounts for the authenticated user', () => {
+    it('', async () => {
       const req = mockReq({ headers: { 'x-user-id': 'usr_seed_001' }, query: {} });
       const res = mockRes();
-      getAccounts(req, res);
+      await getAccounts(req, res);
       expect(res.status).toHaveBeenCalledWith(200);
       const call = res.json.mock.calls[0][0];
       expect(call.data.every((a) => a.userId === 'usr_seed_001')).toBe(true);
     });
 
-    it('respects the limit query parameter (max 100)', () => {
+    it('', async () => {
       const req = mockReq({
         headers: { 'x-user-id': 'usr_seed_001' },
         query: { limit: '999' },
       });
       const res = mockRes();
-      getAccounts(req, res);
+      await getAccounts(req, res);
       expect(res.status).toHaveBeenCalledWith(200);
       const call = res.json.mock.calls[0][0];
       // Count cannot exceed 100 regardless of requested limit
       expect(call.data.length).toBeLessThanOrEqual(100);
     });
 
-    it('returns 400 when x-user-id header is missing', () => {
+    it('', async () => {
       const req = mockReq({ headers: {} });
       const res = mockRes();
-      getAccounts(req, res);
+      await getAccounts(req, res);
       expect(res.status).toHaveBeenCalledWith(400);
     });
   });
 
   describe('getAccount', () => {
-    it('returns 404 for non-existent account', () => {
+    it('', async () => {
       const req = mockReq({ params: { id: 'acc_nonexistent' } });
       const res = mockRes();
-      getAccount(req, res);
+      await getAccount(req, res);
       expect(res.status).toHaveBeenCalledWith(404);
     });
 
-    it('returns account for valid id', () => {
+    it('', async () => {
       const req = mockReq({ params: { id: 'acc_001' } });
       const res = mockRes();
-      getAccount(req, res);
+      await getAccount(req, res);
       expect(res.status).toHaveBeenCalledWith(200);
     });
   });
 
   describe('createAccount', () => {
-    it('returns 400 when x-user-id header is missing', () => {
+    it('', async () => {
       const req = mockReq({ headers: {}, body: { type: 'savings' } });
       const res = mockRes();
-      createAccount(req, res);
+      await createAccount(req, res);
       expect(res.status).toHaveBeenCalledWith(400);
     });
 
-    it('creates account using userId from header', () => {
+    it('', async () => {
       const req = mockReq({ headers: { 'x-user-id': 'usr_new' }, body: { type: 'savings' } });
       const res = mockRes();
-      createAccount(req, res);
+      await createAccount(req, res);
       expect(res.status).toHaveBeenCalledWith(201);
       const call = res.json.mock.calls[0][0];
       expect(call.data.userId).toBe('usr_new');
@@ -89,32 +130,32 @@ describe('accounts.controller', () => {
   });
 
   describe('updateAccount', () => {
-    it('returns 404 for non-existent account', () => {
+    it('', async () => {
       const req = mockReq({ params: { id: 'acc_ghost' }, body: {} });
       const res = mockRes();
-      updateAccount(req, res);
+      await updateAccount(req, res);
       expect(res.status).toHaveBeenCalledWith(404);
     });
 
-    it('returns 200 on successful update', () => {
+    it('', async () => {
       const req = mockReq({ params: { id: 'acc_001' }, body: { status: 'inactive' } });
       const res = mockRes();
-      updateAccount(req, res);
+      await updateAccount(req, res);
       expect(res.status).toHaveBeenCalledWith(200);
     });
   });
 
   describe('deleteAccount', () => {
-    it('returns 404 for non-existent account', () => {
+    it('', async () => {
       const req = mockReq({ params: { id: 'acc_ghost' } });
       const res = mockRes();
-      deleteAccount(req, res);
+      await deleteAccount(req, res);
       expect(res.status).toHaveBeenCalledWith(404);
     });
-    it('returns 200 on successful delete', () => {
+    it('', async () => {
       const req = mockReq({ params: { id: 'acc_001' } });
       const res = mockRes();
-      deleteAccount(req, res);
+      await deleteAccount(req, res);
       expect(res.status).toHaveBeenCalledWith(200);
     });
   });

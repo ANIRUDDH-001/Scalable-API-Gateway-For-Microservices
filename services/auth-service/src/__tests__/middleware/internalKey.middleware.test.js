@@ -1,3 +1,4 @@
+process.env.MONGODB_URI = 'mongodb://localhost:27017/test';
 // Temporarily set env for tests BEFORE require
 const MOCK_KEY = 'test_internal_key';
 process.env.INTERNAL_SERVICE_KEY = MOCK_KEY;
