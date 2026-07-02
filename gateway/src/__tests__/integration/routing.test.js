@@ -42,7 +42,7 @@ describe('Gateway Proxy Routing', () => {
 
       const res = await request(app)
         .post('/api/v1/auth/register')
-        .send({ email: 'test@test.com', password: 'pass', name: 'Test' });
+        .send({ email: 'test@test.com', password: 'password123', name: 'Test' });
 
       expect(res.status).toBe(201);
       expect(res.headers['x-request-id']).toBeDefined();

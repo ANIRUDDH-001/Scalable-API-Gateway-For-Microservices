@@ -65,6 +65,9 @@ app.use(express.json({ limit: '10kb' }));
 
 app.use(healthRouter);
 
+const validatorRouter = require('./routes/validator.routes');
+app.use('/api/v1', validatorRouter);
+
 app.notFound = (req, res) => {
   res.status(404).json({ status: 'error', message: `${req.method} ${req.path} — route not found` });
 };
