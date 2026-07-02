@@ -20,6 +20,7 @@ const injectGatewayHeaders = (proxyReq, req) => {
 
   // Fix body parser hanging issue for POST requests
   if (req.body && Object.keys(req.body).length > 0) {
+    proxyReq.removeHeader('transfer-encoding');
     fixRequestBody(proxyReq, req);
   }
 
