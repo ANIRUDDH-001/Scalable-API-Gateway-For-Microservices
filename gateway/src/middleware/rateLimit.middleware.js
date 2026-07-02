@@ -1,11 +1,21 @@
 const rateLimit = require('express-rate-limit');
+const { RedisStore } = require('rate-limit-redis');
+const redisClient = require('../config/redis');
 
 /**
  * Builds a rate limiter with consistent JSON error response.
  * @param {object} opts - express-rate-limit options
  */
-const buildLimiter = (opts) =>
-  rateLimit({
+const buildLimiter = (opts) => {
+  const store =
+    process.env.NODE_ENV === 'test'
+      ? undefined // Uses default MemoryStore
+      : new RedisStore({
+          sendCommand: (...args) => redisClient.sendCommand(args),
+        });
+
+  return rateLimit({
+    store,
     standardHeaders: 'draft-7', // Sends RateLimit-* headers (RFC standard)
     legacyHeaders: false,
     handler: (req, res, _next, options) => {
@@ -18,6 +28,7 @@ const buildLimiter = (opts) =>
     },
     ...opts,
   });
+};
 
 /**
  * globalLimiter: applied to ALL routes at app level.
