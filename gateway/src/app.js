@@ -4,6 +4,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const { assignRequestId } = require('./middleware/requestId.middleware');
 const { globalLimiter } = require('./middleware/rateLimit.middleware');
+const { metricsMiddleware, metricsHandler } = require('./middleware/metrics.middleware');
 const healthRouter = require('./routes/health.routes');
 const logger = require('./utils/logger');
 
@@ -50,7 +51,13 @@ const morganFormat = (tokens, req, res) =>
 
 const app = express();
 
-// Order matters: requestId → helmet → cors → rate limit → morgan → json
+app.set('trust proxy', 1);
+
+// Metrics must be the first middleware to capture accurate timing
+app.use(metricsMiddleware);
+app.get('/metrics', metricsHandler);
+
+// Order matters: metrics → requestId → helmet → cors → rate limit → morgan → json
 app.use(assignRequestId);
 app.use(helmet(helmetOptions));
 app.use(cors(corsOptions));
