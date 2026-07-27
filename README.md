@@ -3,7 +3,7 @@
 ![CI](https://github.com/ANIRUDDH-001/Scalable-API-Gateway-For-Microservices/actions/workflows/ci.yml/badge.svg)
 
 Centralised API Gateway for a fintech microservices system built with Node.js and Express.
-Single entry point for routing, authentication, rate limiting, caching, and observability.
+Single entry point for routing, authentication, rate limiting, and observability.
 
 ## Architecture
 
@@ -14,8 +14,8 @@ Single entry point for routing, authentication, rate limiting, caching, and obse
 | Service              | Port | Description                                       |
 | -------------------- | ---- | ------------------------------------------------- |
 | API Gateway          | 8000 | Single entry point — routing, auth, rate limiting |
-| auth-service         | 3001 | JWT-based register and login                      |
-| accounts-service     | 3002 | Account CRUD (in-memory store)                    |
+| auth-service         | 3001 | JWT register / login / refresh (MongoDB)          |
+| accounts-service     | 3002 | Account CRUD (MongoDB)                            |
 | transactions-service | 3003 | Transaction CRUD (MongoDB)                        |
 
 ## Local Setup
@@ -43,11 +43,17 @@ mongod --dbpath /tmp/mongodb-data --port 27017 --fork --logpath /tmp/mongod.log
 
 ```bash
 git clone https://github.com/ANIRUDDH-001/Scalable-API-Gateway-For-Microservices.git
-cd api-gateway-fintech
+
+# Make sure you are in the project root directory before running further commands.
+# If you cloned into a specific folder, cd into it:
+# cd api-gateway-fintech (or cd Scalable-API-Gateway-For-Microservices)
+
 npm install
 ```
 
 ### Configure
+
+> **Note for Windows users:** If `cp` does not work, you can use `copy` in Command Prompt, or `Copy-Item` in PowerShell, or simply duplicate and rename the `.env.example` files manually.
 
 ```bash
 # Copy and fill each service's env file
@@ -61,20 +67,22 @@ Use the same value for `INTERNAL_SERVICE_KEY` across all four `.env` files.
 
 ### Start
 
+**IMPORTANT:** Every time you open a new terminal, make sure your terminal is currently in the project root directory (the folder containing `package.json`) before running the `cd` commands below.
+
 Open 4 terminals:
 
 ```bash
-# Terminal 1
-cd services/auth-service && npm run dev
+# Terminal 1 (Ensure you are in the project root first)
+cd api-gateway-fintech ;cd services/auth-service ; npm run dev
 
 # Terminal 2
-cd services/accounts-service && npm run dev
+cd services/accounts-service ; npm run dev
 
 # Terminal 3
-cd services/transactions-service && npm run dev
+cd services/transactions-service ; npm run dev
 
 # Terminal 4
-cd gateway && npm run dev
+cd gateway ; npm run dev
 ```
 
 Gateway is available at: `http://localhost:8000`
@@ -90,6 +98,16 @@ npm run test:coverage     # with coverage report
 
 Import `postman/fintech-gateway-v1.postman_collection.json` and
 `postman/fintech-gateway-local.postman_environment.json` into Postman.
+
+### Recording the API Demo Video (Phase 2 Submission)
+
+To demonstrate the protected API endpoints without a frontend UI, use Postman and any screen recorder:
+
+1. **Unauthorized Access:** Send a request to `GET /api/v1/accounts` without a token to show the `401 Unauthorized` response.
+2. **Authentication:** Send a request to `POST /api/v1/auth/login` and highlight the returned JWT token.
+3. **Authorized Access:** Send a request to `GET /api/v1/accounts` using the JWT as a Bearer Token to show a `200 OK` response.
+4. **Rate Limiting:** Spam the login or accounts endpoint until the gateway returns a `429 Too Many Requests` error.
+5. **Observability:** Highlight the `X-Request-ID` in the response headers.
 
 ## API Reference
 
@@ -115,5 +133,6 @@ See `docs/logging-guide.md` for request tracing instructions.
 
 - [x] Month 1 — Request routing foundation
 - [x] Month 2 — JWT auth, rate limiting, logging
-- [ ] Month 3 — Docker, Redis cache, Prometheus/Grafana, Render deployment
-  - `redis` and `prom-client` are already listed as gateway dependencies, ready for Month 3 implementation
+- [ ] Month 3 — Redis response cache, Grafana dashboards, Render deployment
+  - Partially in place: `Dockerfile` + `docker-compose.yml`, Redis wired as the production rate-limit store, and a Prometheus `/metrics` endpoint via `prom-client`
+  - Not yet done: response caching, Grafana dashboards, and cloud deployment

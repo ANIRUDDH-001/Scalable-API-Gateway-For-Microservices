@@ -15,3 +15,7 @@ GEMINI*.md
 
 **/.env
 gateway/logs/*.log
+
+# Local prep / presentation docs (personal — not part of the project)
+local-docs/
+*.local.docx

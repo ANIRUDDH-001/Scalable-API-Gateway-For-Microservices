@@ -46,6 +46,7 @@ body into RAM before forwarding.
 | GET /api/v1/transactions        | transactions-service:3003 | GET /transactions        |
 | POST /api/v1/transactions       | transactions-service:3003 | POST /transactions       |
 | GET /api/v1/transactions/:id    | transactions-service:3003 | GET /transactions/:id    |
+| PUT /api/v1/transactions/:id    | transactions-service:3003 | PUT /transactions/:id    |
 | DELETE /api/v1/transactions/:id | transactions-service:3003 | DELETE /transactions/:id |
 
 ## Health Endpoint
