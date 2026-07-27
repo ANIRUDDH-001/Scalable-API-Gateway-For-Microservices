@@ -8,11 +8,11 @@ const redisClient = require('../config/redis');
  */
 const buildLimiter = (opts) => {
   const store =
-    process.env.NODE_ENV === 'test'
-      ? undefined // Uses default MemoryStore
-      : new RedisStore({
+    process.env.NODE_ENV === 'production'
+      ? new RedisStore({
           sendCommand: (...args) => redisClient.sendCommand(args),
-        });
+        })
+      : undefined; // Uses default MemoryStore in test/development
 
   return rateLimit({
     store,
